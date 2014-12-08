@@ -1,0 +1,91 @@
+Imports NationalInstruments.DAQmx
+
+Public Class Form1
+    Inherits System.Windows.Forms.Form
+    Dim SolenoidStatus As Boolean
+    Dim Start As Boolean
+    Dim ConveyerItemSensor As Boolean
+    Dim counter As Integer = 0
+    Dim checked As Boolean
+    Private EmergencySTOP As Task
+    Private SolenoidStop As Task 'P0.0
+    Private Startbutton As Task 'P0.2 49
+    Private ditask0 As Task
+    Private digitalout As DigitalSingleChannelWriter
+    Private digitalout2 As DigitalSingleChannelWriter
+
+    Private digitalread As DigitalSingleChannelReader
+
+    Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
+        Timer1.Enabled = True
+        Timer2.Enabled = True
+        SolenoidStop = New Task("digital output0")
+        SolenoidStop.DOChannels.CreateChannel("dev1/line0", "dig0", ChannelLineGrouping.OneChannelForEachLine) ' If error, try Dev2 here!!
+        digitalout = New DigitalSingleChannelWriter(SolenoidStop.Stream)
+        SolenoidStatus = False
+
+        Startbutton = New Task("digital output1")
+        Startbutton.DOChannels.CreateChannel("dev1/line2", "dig1", ChannelLineGrouping.OneChannelForEachLine) ' If error, try Dev2 here!!
+        digitalout2 = New DigitalSingleChannelWriter(Startbutton.Stream)
+        Start = False
+
+        'EmergencySTOP = New Task("digital output")
+        'EmergencySTOP.DOChannels.CreateChannel("dev1/line0", "digout", _
+        'ChannelLineGrouping.OneChannelForEachLine) ' If error, try Dev2 here!!
+        'digitalout = New DigitalSingleChannelWriter(EmergencySTOP.Stream)
+        'SolenoidStatus = False
+
+        ditask0 = New Task("digital input")
+        ditask0.DIChannels.CreateChannel("dev1/line1", "digin", ChannelLineGrouping.OneChannelForEachLine) ' If error, try Dev2 here!!
+        digitalread = New DigitalSingleChannelReader(ditask0.Stream)
+
+        Button1.Text = "SolenoidON"
+        Button2.Text = "SolenoidOFF"
+        Button3.Text = "StartMotor"
+        Button4.Text = "StopMotor"
+        Button5.Text = "Reset Counter"
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        digitalout.WriteSingleSampleSingleLine(True, True)
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        digitalout.WriteSingleSampleSingleLine(True, False)
+    End Sub
+
+
+
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+        ConveyerItemSensor = digitalread.ReadSingleSampleSingleLine()
+        TextBox1.Text = counter
+        digitalout.WriteSingleSampleSingleLine(True, ConveyerItemSensor)
+        If ConveyerItemSensor = True Then
+
+            If checked = False Then
+                checked = True
+                counter = counter + 1
+            End If
+        Else
+            checked = False
+        End If
+
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        digitalout2.WriteSingleSampleSingleLine(True, True)
+    End Sub
+
+
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
+        digitalout2.WriteSingleSampleSingleLine(True, False)
+    End Sub
+
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
+        counter = 0
+    End Sub
+
+    Private Sub Timer2_Tick(sender As Object, e As EventArgs) Handles Timer2.Tick
+       
+    End Sub
+End Class
